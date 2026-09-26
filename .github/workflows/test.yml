@@ -1,0 +1,53 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  HERDR_VERSION: v0.9.1   # the version the plugin is tested against
+
+jobs:
+  unit:
+    name: unit (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      # /bin/bash is 3.2 on macOS; the code is meant to work there.
+      - run: /bin/bash --version | head -1
+      - run: /bin/bash test/run-all.sh
+      - name: mutation check (tests must catch known bugs)
+        run: /bin/bash test/mutation-check.sh
+
+  e2e:
+    name: e2e (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: herdr-linux-x86_64
+          - os: macos-latest
+            asset: herdr-macos-aarch64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: install herdr ${{ env.HERDR_VERSION }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -fsSL -o "$RUNNER_TEMP/bin/herdr" \
+            "https://github.com/herdrdev/herdr/releases/download/$HERDR_VERSION/${{ matrix.asset }}"
+          chmod +x "$RUNNER_TEMP/bin/herdr"
+          "$RUNNER_TEMP/bin/herdr" --version
+      - name: e2e tests
+        run: /bin/bash test/e2e/test-e2e.sh
+        env:
+          E2E_HERDR: ${{ runner.temp }}/bin/herdr
+      - name: herdr server log (on failure)
+        if: failure()
+        run: find /tmp -maxdepth 4 -name 'herdr-server.log' -exec tail -n 50 {} + || true

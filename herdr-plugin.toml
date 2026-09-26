@@ -1,0 +1,42 @@
+id = "focus-history"
+name = "Focus History"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Vim-style back/forward history for workspace and agent focus"
+platforms = ["linux", "macos"]
+
+[[events]]
+on = "workspace.focused"
+command = ["bash", "src/record.sh", "workspace"]
+
+[[events]]
+on = "pane.focused"
+command = ["bash", "src/record.sh", "agent"]
+
+[[events]]
+on = "workspace.closed"
+command = ["bash", "src/close.sh", "workspace"]
+
+[[events]]
+on = "pane.closed"
+command = ["bash", "src/close.sh", "agent"]
+
+[[actions]]
+id = "workspace-back"
+title = "Jump to previous workspace"
+command = ["bash", "src/navigate.sh", "workspace", "back"]
+
+[[actions]]
+id = "workspace-forward"
+title = "Jump to next workspace"
+command = ["bash", "src/navigate.sh", "workspace", "forward"]
+
+[[actions]]
+id = "agent-back"
+title = "Jump to previous agent"
+command = ["bash", "src/navigate.sh", "agent", "back"]
+
+[[actions]]
+id = "agent-forward"
+title = "Jump to next agent"
+command = ["bash", "src/navigate.sh", "agent", "forward"]
